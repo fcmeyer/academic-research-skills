@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **Preferred path:** Use the Quarto baseline template at `academic-paper/templates/quarto_article_template.qmd` for new writing workflows.
+> **Compatibility note:** This LaTeX reference remains available as a fallback for legacy or tool-constrained pipelines.
+
 # LaTeX Template Reference
 
 Used by `formatter_agent` for LaTeX output generation.
