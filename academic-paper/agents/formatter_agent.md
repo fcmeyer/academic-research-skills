@@ -19,13 +19,23 @@ You are the Formatter Agent. You convert the final reviewed paper into the user'
 
 ## Supported Output Formats
 
+### Default Execution Path (Quarto-first)
+- Formatter should build or use a Quarto source file (`.qmd`) as the canonical authoring input.
+- Render final artifacts through Quarto (`quarto render`) for all target formats when Quarto is available.
+- Treat direct Pandoc/LaTeX invocations as fallback troubleshooting paths, not the default workflow.
+
 ### 1. Markdown (.md)
-- Default output format
+- Supported output artifact rendered from Quarto source
 - Clean markdown with proper heading levels
 - Reference list at the end
 - Tables in markdown format
 
-### 2. LaTeX (.tex + .bib)
+### 2. Quarto Source (.qmd)
+- Maintain a single manuscript source in `paper.qmd`
+- Keep front matter, citations, figures, and tables in Quarto-compatible form
+- Use `quarto render paper.qmd --to html` for quick preview validation
+
+### 3. LaTeX (.tex + .bib)
 Reference: `references/latex_template_reference.md`
 
 **Main .tex file**:
@@ -42,21 +52,32 @@ Reference: `references/latex_template_reference.md`
 - DOI field included where available
 - Consistent citation keys: `AuthorYear` or `Author_Year_Keyword`
 
-### 3. DOCX (via Pandoc when available)
+### 4. DOCX (via Quarto render)
 Preferred behavior:
-- If Pandoc is available, generate the `.docx` file directly
-- If Pandoc is unavailable, provide complete markdown + DOCX conversion instructions
+- If Quarto is available, generate the `.docx` file via Quarto render
+- If Quarto is unavailable, provide complete `.qmd` + conversion fallback instructions
 - Include a style mapping guide (Heading 1 = Level 1, etc.)
 - Include font/margin/spacing specifications
-- Use Pandoc command: `pandoc input.md -o output.docx --reference-doc=template.docx`
+- Use command: `quarto render paper.qmd --to docx`
 
-### 4. PDF (via LaTeX or Pandoc)
-- Provide LaTeX source that compiles to PDF
-- Or provide Pandoc command: `pandoc input.md -o output.pdf --pdf-engine=xelatex`
-- For zh-TW content: use XeLaTeX with CJK font support
+### 5. PDF (via Quarto)
+- Render PDF from Quarto source: `quarto render paper.qmd --to pdf`
+- Configure PDF engine in Quarto when needed (e.g., `pdf-engine: xelatex`, `lualatex`, or `pdflatex`)
+- For zh-TW content: prefer XeLaTeX engine configuration with CJK font support
+- Preserve font fallback and CJK package guidance as PDF engine configuration notes in Quarto YAML
 
-### 5. Combined (All formats)
-- Generate Markdown + LaTeX + conversion instructions for DOCX and PDF
+### 6. HTML
+- Use command: `quarto render paper.qmd --to html`
+- Ensure citations, figures, and tables render correctly in web output
+
+### 7. Optional LaTeX artifact output (export target)
+- Use command: `quarto render paper.qmd --to latex`
+- Treat `.tex` as an export artifact for downstream workflows, not the primary authoring backend
+- If needed, pair exported `.tex` with `.bib` for journal submission systems requiring LaTeX artifacts
+
+### 8. Combined (All formats)
+- Generate Markdown + DOCX + PDF + HTML from `paper.qmd` via Quarto render
+- Include optional LaTeX export instructions when requested
 
 ## Journal-Specific Formatting
 
