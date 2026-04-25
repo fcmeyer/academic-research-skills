@@ -66,6 +66,23 @@ sudo apt-get install pandoc
 # Windows — download from https://pandoc.org/installing.html
 ```
 
+## CSL citation style bootstrap (recommended for Quarto/Pandoc)
+
+Quarto/Pandoc citation rendering needs a CSL file in `academic-paper/templates/csl/`.  
+Run the bootstrap once before first render:
+
+```bash
+python scripts/bootstrap_csl.py
+```
+
+- The script asks for your preferred citation style.
+- Press Enter to use the default **APA** style (`apa.csl`).
+- For non-official/custom styles, pass a direct file URL:
+
+```bash
+python scripts/bootstrap_csl.py --style my-style --source-url https://example.com/my-style.csl
+```
+
 ## LaTeX / PDF output (optional)
 
 PDF output requires [tectonic](https://tectonic-typesetting.github.io/) and specific fonts. **This is optional** — Markdown output and DOCX conversion instructions work without any of this.

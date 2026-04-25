@@ -357,15 +357,17 @@ Chinese abstract content...
 
 ## Pandoc Conversion Commands
 
+> Replace `<preferred-style>` with your chosen CSL name. Default is `apa` (`apa.csl` from the official CSL styles repository).
+
 ### Markdown → LaTeX
 ```bash
-pandoc paper.md -o paper.tex --bibliography=references.bib --csl=apa.csl
+pandoc paper.md -o paper.tex --bibliography=references.bib --csl=<preferred-style>.csl
 ```
 
 ### Markdown → PDF (via LaTeX)
 ```bash
 pandoc paper.md -o paper.pdf --pdf-engine=xelatex \
-  --bibliography=references.bib --csl=apa.csl \
+  --bibliography=references.bib --csl=<preferred-style>.csl \
   -V geometry:margin=1in -V fontsize=12pt -V linestretch=2
 ```
 
@@ -373,10 +375,10 @@ pandoc paper.md -o paper.pdf --pdf-engine=xelatex \
 ```bash
 pandoc paper.md -o paper.pdf --pdf-engine=xelatex \
   -V CJKmainfont="Noto Sans CJK TC" \
-  --bibliography=references.bib --csl=apa.csl
+  --bibliography=references.bib --csl=<preferred-style>.csl
 ```
 
 ### Markdown → DOCX
 ```bash
-pandoc paper.md -o paper.docx --bibliography=references.bib --csl=apa.csl
+pandoc paper.md -o paper.docx --bibliography=references.bib --csl=<preferred-style>.csl
 ```

@@ -66,6 +66,23 @@ sudo apt-get install pandoc
 # Windows — 請至 https://pandoc.org/installing.html 下載
 ```
 
+## CSL 引用格式 bootstrap（建議 Quarto/Pandoc 使用）
+
+Quarto/Pandoc 的引用渲染需要 `academic-paper/templates/csl/` 內有 CSL 檔。  
+第一次渲染前，先執行一次：
+
+```bash
+python scripts/bootstrap_csl.py
+```
+
+- 腳本會詢問你偏好的引用格式。
+- 直接按 Enter 會使用預設 **APA**（`apa.csl`）。
+- 若要使用非官方／自訂樣式，可提供檔案 URL：
+
+```bash
+python scripts/bootstrap_csl.py --style my-style --source-url https://example.com/my-style.csl
+```
+
 ## LaTeX / PDF 輸出（選用）
 
 PDF 輸出需要 [tectonic](https://tectonic-typesetting.github.io/) 和特定字型。**這是選用的** — Markdown 輸出與 DOCX 轉換說明不需要這些。
