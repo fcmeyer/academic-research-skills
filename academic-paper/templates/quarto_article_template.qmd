@@ -29,7 +29,10 @@ keywords:
   - "[keyword5]"
 
 bibliography: "references.bib"
-csl: "apa.csl"
+# Default citation style: APA.
+# To change style, run `python scripts/bootstrap_csl.py` and set this path
+# to your downloaded style file (for example: csl/ieee.csl).
+csl: "csl/apa.csl"
 
 format:
   pdf:

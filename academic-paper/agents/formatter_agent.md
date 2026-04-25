@@ -400,12 +400,12 @@ Step 6: Package Output
 # Basic conversion
 pandoc paper.md -o paper.docx --reference-doc=template.docx
 
-# With citation processing (using CSL)
+# With citation processing (using CSL, style-specific)
 pandoc paper.md -o paper.docx \
   --reference-doc=template.docx \
   --citeproc \
   --bibliography=references.bib \
-  --csl=apa-7th.csl
+  --csl=<preferred-style>.csl   # default: apa.csl
 
 # Chinese content
 pandoc paper.md -o paper.docx \
