@@ -1,6 +1,6 @@
 ---
 name: academic-paper
-description: "12-agent academic paper writing pipeline. 10 modes (full/plan/outline/revision/revision-coach/abstract/lit-review/format-convert/citation-check/disclosure). 6 paper types, 5 citation formats, bilingual abstracts, LaTeX/DOCX-via-Pandoc/PDF output. Style Calibration + Writing Quality Check + Anti-Patterns with IRON RULE markers. Triggers: write paper, academic paper, guide my paper, parse reviews, AI disclosure, 寫論文, 學術論文, 引導我寫論文, 審查意見."
+description: "12-agent academic paper writing pipeline. 10 modes (full/plan/outline/revision/revision-coach/abstract/lit-review/format-convert/citation-check/disclosure). 6 paper types, 5 citation formats, bilingual abstracts, Quarto-based rendering to Markdown/DOCX/PDF/LaTeX when requested. Style Calibration + Writing Quality Check + Anti-Patterns with IRON RULE markers. Triggers: write paper, academic paper, guide my paper, parse reviews, AI disclosure, 寫論文, 學術論文, 引導我寫論文, 審查意見."
 metadata:
   version: "3.1.0"
   last_updated: "2026-04-20"
@@ -40,7 +40,7 @@ Write a paper on the impact of declining birth rates on private university manag
 5. Full-text drafting — section-by-section draft, register adjustment
 6. Citation compliance + bilingual abstract (parallel)
 7. Peer review — five-dimension scoring, revision suggestions
-8. Output formatting — LaTeX/DOCX (via Pandoc)/PDF/Markdown
+8. Output formatting — Quarto-based rendering to Markdown/DOCX/PDF/LaTeX (on request)
 
 ---
 
@@ -51,6 +51,8 @@ Write a paper on the impact of declining birth rates on private university manag
 **English**: write paper, academic paper, paper outline, write abstract, revise paper, literature review paper, check citations, convert to LaTeX, convert format, format paper, conference paper, journal article, thesis chapter, research paper, guide my paper, help me plan my paper, step by step paper, draft manuscript, write methodology, write discussion, parse reviews, revision roadmap, help me with my revision, I got reviewer comments, convert citations
 
 **繁體中文**: 寫論文, 學術論文, 論文大綱, 寫摘要, 修改論文, 文獻回顧論文, 檢查引用, 轉 LaTeX, 轉換格式, 研討會論文, 期刊文章, 學位論文, 研究論文, 引導我寫論文, 幫我規劃論文, 逐步寫論文, 寫方法論, 寫討論, 審查意見, 修訂路線圖, 幫我修改, 我收到審查意見, 轉換引用格式
+
+> Compatibility note: legacy prompts that say "convert to LaTeX" are interpreted as a format request and routed through the Quarto render flow.
 
 ### Plan Mode Activation
 
@@ -75,7 +77,7 @@ Activate `plan` mode when the user wants guidance, step-by-step planning, or exp
 | Citation | Multi-format (APA/Chicago/MLA/IEEE/Vancouver) | APA 7.0 only |
 | Abstract | Bilingual (zh-TW + EN) | Single language |
 | Peer review | Simulated 5-dimension review | Editorial review |
-| Output format | LaTeX/DOCX (via Pandoc)/PDF/Markdown | Markdown only |
+| Output format | Markdown/DOCX/PDF (optional LaTeX export) via Quarto | Markdown only |
 | Revision loop | Max 2 rounds with targeted feedback | Max 2 rounds |
 
 ---
@@ -92,7 +94,7 @@ Activate `plan` mode when the user wants guidance, step-by-step planning, or exp
 | 6 | `citation_compliance_agent` | Citation format verification, reference list completeness, DOI checking | Phase 5a |
 | 7 | `abstract_bilingual_agent` | Bilingual abstract (zh-TW + EN), 5-7 keywords each | Phase 5b |
 | 8 | `peer_reviewer_agent` | Simulated double-blind review, five-dimension scoring, revision suggestions (max 2 rounds) | Phase 6 |
-| 9 | `formatter_agent` | Convert to LaTeX/DOCX (via Pandoc)/PDF/Markdown, journal formatting, cover letter, citation format conversion (APA 7 / Chicago / MLA / IEEE / Vancouver) | Phase 7 |
+| 9 | `formatter_agent` | Render via Quarto to target format(s), optionally emit LaTeX source; journal formatting, cover letter, citation format conversion (APA 7 / Chicago / MLA / IEEE / Vancouver) | Phase 7 |
 | 10 | `socratic_mentor_agent` | Plan mode Socratic mentor: chapter-by-chapter guidance, convergence criteria (4 signals), question taxonomy (4 types), INSIGHT extraction | Plan Step 0-3 |
 | 11 | `visualization_agent` | Parse paper data and generate publication-quality figure code (Python matplotlib / R ggplot2) with APA 7.0 formatting, colorblind-safe palettes, and LaTeX integration | Phase 4 / Phase 7 |
 | 12 | `revision_coach_agent` | Parse unstructured reviewer comments into structured Revision Roadmap; classify, map, and prioritize comments; works standalone without prior pipeline execution | Revision-Coach mode |
@@ -102,7 +104,7 @@ Activate `plan` mode when the user wants guidance, step-by-step planning, or exp
 ## Output Formats
 
 ### Text Formats
-LaTeX (.tex + .bib), DOCX (via Pandoc), PDF (via LaTeX or Pandoc), Markdown.
+Quarto-based rendering to Markdown, DOCX, PDF, and optional LaTeX export (.tex + .bib) when requested.
 
 ### Figures
 When the paper contains quantitative results, the `visualization_agent` can generate publication-ready figures in Python (matplotlib/seaborn) or R (ggplot2) with APA 7.0 formatting and colorblind-safe palettes. Figures are delivered as runnable code + LaTeX `\includegraphics` integration code. See `references/statistical_visualization_standards.md` for chart type decision trees and code templates.
