@@ -1,6 +1,6 @@
 # ARS Performance Notes
 
-> **Recommended model: Claude Opus 4.7** with **Max plan** (or equivalent configuration). Opus 4.7 uses adaptive thinking; you no longer set a fixed thinking budget.
+> **Recommended model: the current frontier Claude model** (Fable 5 at the time of writing) with **Max plan** (or equivalent configuration). Current Claude models use adaptive thinking; you no longer set a fixed thinking budget.
 >
 > The full academic pipeline (10 stages) consumes a **large amount of tokens** — a single end-to-end run can exceed 200K input + 100K output tokens depending on paper length and revision rounds. Budget accordingly.
 >
@@ -8,7 +8,7 @@
 
 ## Estimated token usage by mode
 
-| Skill / Mode | Input Tokens | Output Tokens | Estimated Cost (Opus 4.7) |
+| Skill / Mode | Input Tokens | Output Tokens | Estimated Cost |
 |---|---|---|---|
 | `deep-research` socratic | ~30K | ~15K | ~$0.60 |
 | `deep-research` full | ~60K | ~30K | ~$1.20 |
@@ -20,7 +20,9 @@
 | **Full pipeline (10 stages)** | **~200K+** | **~100K+** | **~$4-6** |
 | + Cross-model verification | +~10K (external) | +~5K (external) | +~$0.60-1.10 |
 
-*Estimates based on a ~15,000-word paper with ~60 references. Actual usage varies with paper length, revision rounds, and dialogue depth. Costs at Anthropic API pricing as of April 2026.*
+*Estimates based on a ~15,000-word paper with ~60 references. Actual usage varies with paper length, revision rounds, and dialogue depth. Costs measured on Opus 4.x at Anthropic API pricing as of April 2026 — treat as order-of-magnitude anchors under newer models rather than exact quotes.*
+
+> **v3.11 citation verification (#182).** The deterministic citation-existence gate calls external bibliographic APIs (Semantic Scholar / OpenAlex / Crossref / arXiv), not the LLM, so it adds **no Claude token cost** to the figures above — only network latency on first lookup. The persistent SQLite cache (`~/.cache/ars/verification.db`, 90-day TTL) means each paper is verified once and reused across drafts; a re-run over an already-cached bibliography does no network work. See [SETUP](SETUP.md#citation-verification-cache-v3.11-182).
 
 ## Recommended Claude Code settings
 
@@ -31,12 +33,36 @@
 
 > **⚠️ Skip Permissions**: This flag disables all tool-use confirmation dialogs. Use at your own discretion — it is convenient for trusted, long-running pipelines but removes the safety net of manual approval. Only enable this in environments where you are comfortable with Claude executing file reads, writes, and shell commands without asking first.
 
+### v3.7.0 Plugin agents and model routing
+
+When ARS is installed as a Claude Code plugin (`/plugin install academic-research-skills`), three downstream worker agents are exposed as plugin-shipped subagents: `synthesis_agent`, `research_architect_agent`, and `report_compiler_agent`. Each declares `model: inherit` in its frontmatter, which means they run under the **dispatching session's model** rather than a pinned floor:
+
+- An Opus session running the full pipeline gets Opus agents, preserving the integrative depth those agents were designed for.
+- A Sonnet session gets Sonnet agents, matching the cost/latency profile of the parent run.
+- The agents never silently fall back to Haiku — `inherit` resolves through the parent session's model, which is itself gated by the project policy of "no Haiku for ARS runs."
+
+This means **plugin-agent token costs track the per-mode estimates above unchanged**; there is no separate plugin agent surcharge or discount, because dispatched agents inherit the same model the parent run already pays for. If you change the main session model mid-pipeline (e.g., downshift to Sonnet for a long revision pass), the next agent dispatch picks up the new floor automatically.
+
+Other ARS agents (`bibliography_agent`, `literature_strategist_agent`, etc.) are not plugin-exposed in v3.7.0; they remain in-skill prompt templates that the main session executes inline, with no separate model routing layer. Wider plugin-agent coverage is deferred to a future release.
+
 ## Long-running session management
 
 The full academic pipeline is designed for human-in-the-loop execution, with mandatory user confirmation at every stage. In practice, a full run often spans hours to days — longer than Anthropic's prompt cache TTL (5 minutes). Two consequences:
 
 1. **Cache misses between checkpoints are normal.** When a stage checkpoint pauses longer than 5 minutes, the next stage reads its context uncached. This is an unavoidable cost of human-paced pipelines.
 2. **Cross-session resume relies on Material Passport.** ARS does not maintain its own orchestrator state between sessions. To resume in a new session, paste your Material Passport YAML back; the orchestrator reads `compliance_history[]` and stage completion markers to locate your breakpoint.
+
+### v3.6.2 Sprint Contract reviewer cost (always-on for `full` / `methodology-focus`)
+
+The Schema 13 sprint contract gate splits each reviewer agent's run into Phase 1 (paper-content-blind, commits scoring plan) + Phase 2 (paper-visible review). For modes that ship templates (`full` panel 5 + `methodology-focus` panel 2), each reviewer therefore costs roughly two LLM turns instead of one. Reserved modes (`re-review` / `calibration` / `guided` / `quick`) keep pre-v3.6.2 behaviour.
+
+| Skill / Mode | Effect on tokens | Notes |
+|---|---|---|
+| `academic-paper-reviewer full` | ~+30-40% input + small output bump per reviewer × 5 reviewers | Each reviewer reads the contract template + paper metadata in Phase 1, then full paper in Phase 2 |
+| `academic-paper-reviewer methodology-focus` | Same shape, panel 2 | Two reviewers (EIC + methodology) each run two phases |
+| Synthesizer (always one) | +~2-3K input | Reads contract + reviewer outputs to run three-step mechanical protocol |
+
+Empirical measurement pending real review runs at scale. The two-phase shape is non-optional for the gated modes; treat as fixed overhead, not a tunable.
 
 ### v3.4.0 compliance agent cost
 
@@ -96,7 +122,7 @@ The Material Passport `literature_corpus[]` field is populated by user-written a
 - `literature_corpus[]` entries are sorted by `citation_key`; rejections are sorted by `source`.
 - Adapter output size grows linearly with corpus size. A 500-entry Zotero library typically produces a passport of ~300 KB YAML. ARS consumers should lazy-load when the corpus is large.
 
-### What v3.6.4 does NOT do
+### Ingestion-layer boundaries
 
 - Does not ingest PDFs, extract text, or run OCR.
 - Does not call the Zotero Web API, Notion API, or any live service.
@@ -106,4 +132,19 @@ These boundaries are deliberate and reflect the ARS data-layer decision: ARS is 
 
 ### Consumer-side integration
 
-As of v3.6.4, no ARS agent reads `literature_corpus[]`. The field is a defined input port only. Consumer-side integration (agents that actually USE the corpus for research planning, citation generation, etc.) is deferred to v3.6.5+.
+As of v3.6.5, two Phase 1 literature agents read `literature_corpus[]` via the **corpus-first, search-fills-gap** flow: `deep-research/agents/bibliography_agent.md` and `academic-paper/agents/literature_strategist_agent.md`. Both consumers follow the same five-step shared flow and four Iron Rules (Same criteria / No silent skip / No corpus mutation / Graceful fallback on parse failure). Search Strategy reports gain a PRE-SCREENED reproducibility block that enumerates included / excluded / skipped corpus entries with F3 zero-hit and F4 provenance reporting. Consumer integration is presence-based — auto-engages when the passport carries a non-empty `literature_corpus[]` and parses cleanly; parse failures fall back to external-DB-only flow with a `[CORPUS PARSE FAILURE]` surface.
+
+See [`academic-pipeline/references/literature_corpus_consumers.md`](../academic-pipeline/references/literature_corpus_consumers.md) for the full consumer protocol. `citation_compliance_agent` corpus integration is deferred (target version TBD post-v3.8).
+
+### v3.6.5 corpus consumer cost (presence-gated)
+
+When the Material Passport carries a non-empty `literature_corpus[]`, Phase 1 reads scale with corpus size. The PRE-SCREENED block emit itself is prompt-layer (effectively free); the LLM cost is Step 1 pre-screening — applying the current Inclusion / Exclusion criteria to each corpus entry's `title` (always present) and any populated optional fields (`abstract` / `tags`).
+
+| Corpus size | Step 1 pre-screening (per consumer) | Notes |
+|---|---|---|
+| Empty / absent | 0 | External-DB-only flow runs unchanged |
+| ~50 entries (typical Zotero subset) | +~3-5K input + ~1-2K output | Title + abstract scan |
+| ~200 entries | +~10-15K input + ~3-5K output | Title-only scan dominates; abstract scan only when populated |
+| ~500 entries (large library) | +~25-40K input + ~8-12K output | Consider trimming the corpus before passport emit |
+
+Step 2 search-fills-gap reduces external-DB cost when `uncovered_topics` is small (case A), which can offset Step 1 cost. Empirical net delta pending real systematic-review run instrumentation; until then, no aggregate numeric claim is made. Parse failures cost roughly one short turn (parse + emit `[CORPUS PARSE FAILURE]` + fall back).
